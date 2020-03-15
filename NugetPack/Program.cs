@@ -1,7 +1,11 @@
 ﻿using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Management.Automation;
+using System.Management.Automation.Runspaces;
+using System.Text;
 
 namespace NugetPack
 {
@@ -9,10 +13,17 @@ namespace NugetPack
     {
         static void Main(string[] args)
         {
+
+            Console.Title = "";
+
+           
             GetVersion(new Package()
             {
                 DataPackageId = "AWSSDK.Core"
             });
+
+            
+
         }
 
 
@@ -66,6 +77,73 @@ namespace NugetPack
 
             Console.WriteLine(nodes.Count+nodes2.Count);
             Console.ReadKey();
+        }
+
+        //使用要添加引用System.Management.Automation.dll； 
+        //此DLL在C:\Program Files (x86)\Reference Assemblies\Microsoft\WindowsPowerShell
+        private static string RunScript(string scriptText)
+        {
+
+            // create Powershell runspace
+
+            Runspace runspace = RunspaceFactory.CreateRunspace();
+
+            // open it
+
+            runspace.Open();
+
+            // create a pipeline and feed it the script text
+
+            Pipeline pipeline = runspace.CreatePipeline();
+
+            pipeline.Commands.AddScript(scriptText);
+
+            pipeline.Commands.Add("Out-String");
+
+            // execute the script
+
+            Collection<PSObject> results = pipeline.Invoke();
+
+            // close the runspace
+
+            runspace.Close();
+
+            // convert the script result into a single string
+
+            StringBuilder stringBuilder = new StringBuilder();
+
+            foreach (PSObject obj in results)
+            {
+
+                stringBuilder.AppendLine(obj.ToString());
+
+            }
+
+            return stringBuilder.ToString();
+
+        }
+        public void RunScript(List<string> scripts)
+        {
+            try
+            {
+                Runspace runspace = RunspaceFactory.CreateRunspace();
+                runspace.Open();
+                Pipeline pipeline = runspace.CreatePipeline();
+                foreach (var scr in scripts)
+                {
+                    pipeline.Commands.AddScript(scr);
+                }
+                //返回结果   
+                var results = pipeline.Invoke();
+                runspace.Close();
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message); 
+            }
+
+
         }
 
     }
